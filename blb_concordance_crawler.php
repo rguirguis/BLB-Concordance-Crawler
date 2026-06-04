@@ -92,7 +92,7 @@ const BOOK_MAP = [
     '1Ch' => '1 Chronicles',       '2Ch' => '2 Chronicles',       'Ezr' => 'Ezra',
     'Neh' => 'Nehemiah',           'Est' => 'Esther',             'Job' => 'Job',
     'Psa' => 'Psalms',             'Pro' => 'Proverbs',           'Ecc' => 'Ecclesiastes',
-    'Son' => 'Song of Solomon',    'Isa' => 'Isaiah',             'Jer' => 'Jeremiah',
+    'Sng' => 'Song of Solomon',    'Isa' => 'Isaiah',             'Jer' => 'Jeremiah',
     'Lam' => 'Lamentations',       'Eze' => 'Ezekiel',            'Dan' => 'Daniel',
     'Hos' => 'Hosea',              'Joe' => 'Joel',               'Amo' => 'Amos',
     'Oba' => 'Obadiah',            'Jon' => 'Jonah',              'Mic' => 'Micah',
@@ -436,9 +436,10 @@ echo "\n";
 // Phase 1 — crawl BLB
 echo "Phase 1 — Crawling BLB concordance …\n";
 
-$all  = [];
-$page = 1;
-$stop = false;
+$all      = [];
+$page     = 1;
+$stop     = false;
+$seenRefs = [];
 
 while (!$stop) {
     $url  = blbUrl($strongsNum, $page);
@@ -449,12 +450,29 @@ while (!$stop) {
     $entries = parseBLBPage($html, $strongsNum);
     if (empty($entries)) { echo "  No entries parsed on page $page — stopping.\n"; break; }
 
+    $newOnPage = 0;
     foreach ($entries as $e) {
+        if (isset($seenRefs[$e['ref']])) {
+            continue;
+        }
+        $seenRefs[$e['ref']] = true;
         $all[] = $e;
+        $newOnPage++;
         if ($limit > 0 && count($all) >= $limit) { $stop = true; break; }
     }
-    echo "  Parsed " . count($entries) . " entries  (total so far: " . count($all) . ")\n";
+
+    if ($newOnPage === 0) {
+        echo "  Page $page returned no new entries — stopping.\n";
+        break;
+    }
+
+    echo "  Parsed " . count($entries) . " entries (" . $newOnPage . " new, total so far: " . count($all) . ")\n";
     if ($stop) { echo "  Limit of $limit reached.\n"; break; }
+
+    if (count($entries) < 50) {
+        echo "  Last page detected (fewer than 50 entries) — stopping.\n";
+        break;
+    }
 
     $page++;
     usleep((int)($delaySeconds * 1_000_000));
