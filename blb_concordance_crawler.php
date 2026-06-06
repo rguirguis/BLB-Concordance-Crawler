@@ -181,6 +181,13 @@ function parseBLBPage(string $html, string $strongsNum): array {
     $start  = strpos($html, $marker);
     if ($start === false) return [];
     $section = substr($html, $start);
+    foreach (['Search Results Continued', 'Search Results in Other Versions'] as $endMarker) {
+        $endPos = strpos($section, $endMarker);
+        if ($endPos !== false) {
+            $section = substr($section, 0, $endPos);
+            break;
+        }
+    }
 
     // ── 2. Extract the total count from "Total: NNNx" for diagnostics ─────────
     // (not used for logic, just informational)
