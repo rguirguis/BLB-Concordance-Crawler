@@ -62,6 +62,65 @@ php blb_concordance_crawler.php G26 agape_nt.md nav
 
 ---
 
+## Workflow: crawler + converter
+
+Use the crawler to generate raw markdown output, then run the converter to produce canonical verse notes and Strong hub notes.
+
+1. Run the crawler for a given Strong number and write output to a markdown file.
+
+```bash
+php blb_concordance_crawler.php --strong H2719 --output h2719_sword.md
+```
+
+2. Run the converter to consume the crawler output and create/update verse notes under `Bible/Verses/` and Strong hub notes under `Bible/Strongs/`.
+
+```bash
+php convert_blb_concordance_output.php --input h2719_sword.md --strong H2719
+```
+
+3. If you have multiple crawler outputs, pass them all to the converter together.
+
+```bash
+php convert_blb_concordance_output.php --input "h2719_sword.md,h3858_flame.md" --strong H2719
+```
+
+4. For an existing verse note, the converter will:
+   - preserve existing YAML metadata and English content
+   - add the new Strong number to `strongs` without duplicates
+   - insert or update the `## Arabic` section
+   - leave unrelated body content intact
+
+5. For each Strong number encountered, the converter also updates or creates a hub note such as `Bible/Strongs/H2719.md`.
+   - Hub notes include dynamic Dataview queries for all verses containing that Strong
+   - They also include a grouped category query using `categories.<Strong>` metadata
+
+## Manually adding categories to a verse note
+
+To add or update a Strong category for a specific verse, edit the verse note YAML frontmatter and add a `categories` map keyed by the Strong ID.
+
+1. Open the verse note file, for example `Bible/Verses/Genesis 3.24.md`.
+2. Find the YAML frontmatter at the very top of the file between `---` lines.
+3. Add or update the `categories` section:
+
+```yaml
+categories:
+  H3858: weapon
+```
+
+4. Save the note.
+
+If the note already has other categories, add the new Strong entry on its own line:
+
+```yaml
+categories:
+  H2719: sword
+  H3858: weapon
+```
+
+This allows the hub note Dataview query `categories.H3858` to group the verse correctly.
+
+---
+
 ## How It Works
 
 ```
